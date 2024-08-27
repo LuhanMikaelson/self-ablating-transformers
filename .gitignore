@@ -161,4 +161,3 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 explore.ipynb
-best_model_128width_120000batches.pt
