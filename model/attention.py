@@ -43,8 +43,6 @@ class Attention(nn.Module):
         context = context.transpose(1, 2).contiguous().view(batch_size, seq_len, self.hidden_size)
 
         if ablation_mask is not None:
-            nonzero_locs = (torch.abs(ablation_mask) > 1e-5).nonzero().tolist()
-            print(f"places where ablation_mask is nonzero: {nonzero_locs}")
             assert context.shape == ablation_mask.shape, f"context has shape {context.shape} while ablation mask has shape {ablation_mask.shape}"
             context = context * ablation_mask
 
