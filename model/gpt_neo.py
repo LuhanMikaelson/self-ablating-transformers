@@ -21,7 +21,7 @@ def soft_top_k(x, k, temperature=1.0):
     weights = torch.sigmoid(diff)
     
     # Normalize weights to sum to k
-    weights = weights * (k / weights.sum())
+    weights = weights * (k / weights.sum(-1).unsqueeze(-1))
     
     return weights
 
@@ -82,10 +82,10 @@ class GPTNeoWithSelfAblation(nn.Module):
             return {"logits": logits, "L_base": L_base}
         else:
             output_attention_ablations = self.attention_ablations_head(x)
-            output_attention_ablations = soft_top_k(output_attention_ablations, self.config.k_attention)
+            output_attention_ablations = soft_top_k(output_attention_ablations, self.config.k_attention, self.config.temperature_attention)
             output_attention_ablations = output_attention_ablations.reshape(self.get_attention_ablations_shape(b, t))
             output_neuron_ablations = self.neuron_ablations_head(x)
-            output_neuron_ablations = soft_top_k(output_neuron_ablations, self.config.k_neurons)
+            output_neuron_ablations = soft_top_k(output_neuron_ablations, self.config.k_neurons, self.config.temperature_neurons)
             output_neuron_ablations = output_neuron_ablations.reshape(self.get_neuron_ablations_shape(b, t))
             second_pass_output = self.forward(input_ids, targets, output_attention_ablations, output_neuron_ablations)
             logits_ablated = second_pass_output["logits"]
