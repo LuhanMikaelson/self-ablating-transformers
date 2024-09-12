@@ -5,6 +5,26 @@ import math
 from .config import GPTNeoWithSelfAblationConfig
 from .block import GPTNeoBlockWithSelfAblation
 
+def soft_top_k(x, k, temperature=1.0):
+    # Normalize the input and sort
+    x = F.layer_norm(x, x.shape[-1:])
+    sorted_x, indices = torch.sort(x, descending=True)
+    
+    # Calculate the threshold as the midpoint between k-th and (k+1)-th largest values
+    assert k < x.shape[-1]
+    threshold = ((sorted_x[..., k-1] + sorted_x[..., k]) / 2).unsqueeze(-1)
+    
+    # Compute the difference from the threshold
+    diff = (x - threshold) / temperature
+    
+    # Apply sigmoid to get soft selection weights
+    weights = torch.sigmoid(diff)
+    
+    # Normalize weights to sum to k
+    weights = weights * (k / weights.sum())
+    
+    return weights
+
 class GPTNeoWithSelfAblation(nn.Module):
     def __init__(self, config):
         super().__init__()
@@ -62,10 +82,10 @@ class GPTNeoWithSelfAblation(nn.Module):
             return {"logits": logits, "L_base": L_base}
         else:
             output_attention_ablations = self.attention_ablations_head(x)
-            output_attention_ablations = torch.sigmoid(output_attention_ablations)
+            output_attention_ablations = soft_top_k(output_attention_ablations, self.config.k_attention)
             output_attention_ablations = output_attention_ablations.reshape(self.get_attention_ablations_shape(b, t))
             output_neuron_ablations = self.neuron_ablations_head(x)
-            output_neuron_ablations = torch.sigmoid(output_neuron_ablations)
+            output_neuron_ablations = soft_top_k(output_neuron_ablations, self.config.k_neurons)
             output_neuron_ablations = output_neuron_ablations.reshape(self.get_neuron_ablations_shape(b, t))
             second_pass_output = self.forward(input_ids, targets, output_attention_ablations, output_neuron_ablations)
             logits_ablated = second_pass_output["logits"]
@@ -75,9 +95,7 @@ class GPTNeoWithSelfAblation(nn.Module):
                 L_attention_density = output_attention_ablations.mean()
                 L_neuron_density = output_neuron_ablations.mean()
                 L_total = sum([self.config.loss_coeff_base * L_base,
-                               self.config.loss_coeff_ablated * L_ablated,
-                               self.config.loss_coeff_attention_density * L_attention_density,
-                               self.config.loss_coeff_neuron_density * L_neuron_density])
+                               self.config.loss_coeff_ablated * L_ablated])
             return {"logits": logits,
                     "logits_ablated": logits_ablated,
                     "L_base": L_base,
@@ -111,6 +129,9 @@ class GPTNeoWithSelfAblation(nn.Module):
         return x[0].tolist()
 
     def generate_hard_cutoff_ablated(self, input_ids, max_new_tokens, temperature=1.0, attention_threshold=0.5, neuron_threshold=0.5):
+        """
+        TODO delete this or make it work with the top-K stuff
+        """
         self.eval()
         device = next(self.parameters()).device
 
