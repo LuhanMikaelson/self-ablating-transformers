@@ -5,24 +5,29 @@ import math
 from .config import GPTNeoWithSelfAblationConfig
 from .block import GPTNeoBlockWithSelfAblation
 
-def soft_top_k(x, k, temperature=1.0):
-    # Normalize the input and sort
-    x = F.layer_norm(x, x.shape[-1:])
+def soft_top_k(x, k, temperature=1.0, eps=1e-12):
+    # Sort the input
     sorted_x, indices = torch.sort(x, descending=True)
-    
+
     # Calculate the threshold as the midpoint between k-th and (k+1)-th largest values
     assert k < x.shape[-1]
     threshold = ((sorted_x[..., k-1] + sorted_x[..., k]) / 2).unsqueeze(-1)
-    
+
+    # "temperature" is actually a temperature modifier because
+    # the temperature we're going to use is related to the difference
+    # between those k-th and (k+1)-th largest values above
+    temperature = (sorted_x[..., k-1] - sorted_x[..., k]) * temperature
+    assert temperature >= 0
+
     # Compute the difference from the threshold
-    diff = (x - threshold) / temperature
-    
+    diff = (x - threshold) / (temperature + eps)
+
     # Apply sigmoid to get soft selection weights
     weights = torch.sigmoid(diff)
-    
+
     # Normalize weights to sum to k
     weights = weights * (k / weights.sum(-1).unsqueeze(-1))
-    
+
     return weights
 
 class GPTNeoWithSelfAblation(nn.Module):
