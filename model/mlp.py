@@ -6,7 +6,7 @@ class NewGELUActivation(nn.Module):
     def forward(self, input: torch.Tensor) -> torch.Tensor:
         return 0.5 * input * (1.0 + torch.tanh(math.sqrt(2.0 / math.pi) * (input + 0.044715 * torch.pow(input, 3.0))))
 
-class MLP(nn.Module):
+class MLPWithSelfAblation(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.c_fc = nn.Linear(config.hidden_size, config.mlp_hidden_size)

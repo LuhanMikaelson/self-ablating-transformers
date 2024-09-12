@@ -1,6 +1,6 @@
 import math
 
-class GPTNeoConfig:
+class GPTNeoWithSelfAblationConfig:
     def __init__(self, vocab_size=50257, hidden_size=64, mlp_hidden_size=None, num_layers=8,
                  num_heads=16, max_position_embeddings=2048, window_size=256, attention_layers=None,
                  loss_coeff_base=1.0, loss_coeff_ablated=0.1,

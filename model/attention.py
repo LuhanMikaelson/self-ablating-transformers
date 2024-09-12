@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-class Attention(nn.Module):
+class AttentionWithSelfAblation(nn.Module):
     def __init__(self, config, layer_id):
         super().__init__()
         self.is_local = (config.attention_layers[layer_id] == "local")

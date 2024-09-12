@@ -2,17 +2,17 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import math
-from .config import GPTNeoConfig
-from .block import GPTNeoBlock
+from .config import GPTNeoWithSelfAblationConfig
+from .block import GPTNeoBlockWithSelfAblation
 
-class GPTNeo(nn.Module):
+class GPTNeoWithSelfAblation(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.config = config
         self.transformer = nn.ModuleDict(dict(
             wte = nn.Embedding(config.vocab_size, config.hidden_size),
             wpe = nn.Embedding(config.max_position_embeddings, config.hidden_size),
-            h = nn.ModuleList([GPTNeoBlock(config, i) for i in range(config.num_layers)]),
+            h = nn.ModuleList([GPTNeoBlockWithSelfAblation(config, i) for i in range(config.num_layers)]),
             ln_f = nn.LayerNorm(config.hidden_size, eps=1e-5)
         ))
         self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
