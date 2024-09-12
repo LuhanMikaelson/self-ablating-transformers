@@ -16,8 +16,8 @@ def soft_top_k(x, k, temperature=1.0, eps=1e-12):
     # "temperature" is actually a temperature modifier because
     # the temperature we're going to use is related to the difference
     # between those k-th and (k+1)-th largest values above
-    temperature = (sorted_x[..., k-1] - sorted_x[..., k]) * temperature
-    assert temperature >= 0
+    temperature = (sorted_x[..., k-1] - sorted_x[..., k]).unsqueeze(-1) * temperature
+    assert torch.all(temperature >= 0)
 
     # Compute the difference from the threshold
     diff = (x - threshold) / (temperature + eps)
