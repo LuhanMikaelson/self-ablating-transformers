@@ -11,6 +11,6 @@ Activation function is replaced by NewGELUActivation
 
 The initial model training stats matched other implementations 
 
-Upon further inspection, evidence of data leakage was found. 
+Upon further inspection, evidence of data leakage was found. (By "data leakage" here we mean that the so-called "ablation mask", which was intended to be an approximately binary on-and-off mask for which model components were active vs inactive for a particular token computation, was in fact being used by the model to pass information about the next token prediction directly from the first forward pass to the second forward pass. This actually makes perfect sense because we're training that second forward pass to use all the resources available to it to give a good prediction for the next token, and if anything correlated with the output of the first forward pass is available, that's a very useful information resource.)
 
 Currently refining the architecture design
