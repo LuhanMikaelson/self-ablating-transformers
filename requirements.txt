@@ -8,3 +8,4 @@ torch>=2.4.0
 tqdm==4.66.5
 transformer-lens==2.4.1
 transformers==4.44.2
+wandb==0.18.0

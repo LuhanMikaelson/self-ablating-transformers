@@ -162,3 +162,7 @@ cython_debug/
 #.idea/
 explore.ipynb
 .DS_Store
+
+train.bin
+validation.bin
+wandb/
