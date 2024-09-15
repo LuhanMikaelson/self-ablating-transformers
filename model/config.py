@@ -1,4 +1,4 @@
-import math
+import torch
 
 class GPTNeoWithSelfAblationConfig:
     def __init__(
@@ -48,3 +48,18 @@ class GPTNeoWithSelfAblationConfig:
                f"k_neurons={self.k_neurons}, temperature_attention={self.temperature_attention}, " \
                f"temperature_neurons={self.temperature_neurons}, beta={self.beta}, " \
                f"reconstruction_coeff={self.reconstruction_coeff})"
+
+
+class TrainingConfig:
+    train_file = "train.bin"
+    val_file = "validation.bin"
+    block_size = 256
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    num_batches = 120000
+    batch_size = 64
+    learning_rate = 4e-3
+    weight_decay = 0.0
+    max_grad_norm = 1.0
+    save_path = "best_model.pt"
+    eval_iters = 100
+    log_interval = 1000

@@ -162,3 +162,9 @@ cython_debug/
 #.idea/
 explore.ipynb
 .DS_Store
+
+# Project specific files
+*.bin
+.env
+*.out
+wandb/
