@@ -48,6 +48,13 @@ class GPTNeoWithSelfAblation(nn.Module):
         shapes: (batch_size, block_length, num_layers, [either hidden_size or mlp_hidden_size])
 
         """
+        if self.config.has_overall_ablation_mask and not is_preliminary_pass:
+            assert overall_attention_ablation_scores == None, "shouldn't have overall ablation scores yet"
+            assert overall_neuron_ablation_scores == None, "shouldn't have overall ablation scores yet"
+            prelim_output = self.forward(input_ids, targets, is_preliminary_pass=True)
+            overall_attention_ablation_scores = prelim_output["attention_ablation_scores"]
+            overall_neuron_ablation_scores = prelim_output["neuron_ablation_scores"]
+
         device = input_ids.device
         _, t = input_ids.shape
         pos = torch.arange(0, t, dtype=torch.long, device=device).unsqueeze(0)

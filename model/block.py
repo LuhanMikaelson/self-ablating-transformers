@@ -46,13 +46,13 @@ class GPTNeoBlockWithSelfAblation(nn.Module):
         neuron_ablation = soft_top_k(neuron_ablation_scores, self.config.k_neurons, self.config.temperature_neurons, eps=self.config.top_k_epsilon)
 
         # Process x_clean
-        attn_output_clean = self.attn(self.ln_1(x_clean), self.ln_2(x_clean)) # FIXME!!!
+        attn_output_clean = self.attn(self.ln_1(x_clean), self.ln_1(x_clean))
         x_clean = x_clean + attn_output_clean
         x_clean = x_clean + self.mlp(self.ln_2(x_clean))
 
         if not is_preliminary_pass:
             # Process x_ablated with ablations
-            attn_output_ablated = self.attn(self.ln_1(x_ablated), self.ln_2(x_clean), attn_ablation) # FIXME!!!
+            attn_output_ablated = self.attn(self.ln_1(x_ablated), self.ln_1(x_clean), attn_ablation)
             x_ablated = x_ablated + attn_output_ablated
             x_ablated = x_ablated + self.mlp(self.ln_2(x_ablated), neuron_ablation)
 
