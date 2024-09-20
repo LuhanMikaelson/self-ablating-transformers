@@ -64,7 +64,7 @@ class GPTNeoWithSelfAblation(nn.Module):
 
         x_clean = x_ablated = tok_emb + pos_emb
 
-        total_reconstruction_loss = 0
+        total_reconstruction_loss = torch.tensor([0], dtype=torch.float32)
 
         attn_ablations_list = []
         neuron_ablations_list = []
