@@ -56,7 +56,13 @@ class GPTNeoBlockWithSelfAblation(nn.Module):
             x_ablated = x_ablated + attn_output_ablated
             x_ablated = x_ablated + self.mlp(self.ln_2(x_ablated), neuron_ablation)
 
-        return (None if is_preliminary_pass else x_ablated), x_clean
+        outputs = dict()
+        outputs["x_ablated"] = None if is_preliminary_pass else x_ablated
+        outputs["x_clean"] = x_clean
+        outputs["attention_ablations"] = attn_ablation
+        outputs["neuron_ablations"] = neuron_ablation
+
+        return outputs
 
     def get_my_device(self):
         return self.ln_1.weight.device

@@ -66,6 +66,9 @@ class GPTNeoWithSelfAblation(nn.Module):
 
         total_reconstruction_loss = 0
 
+        attn_ablations_list = []
+        neuron_ablations_list = []
+
         for i, block in enumerate(self.transformer.h):
 
             block_attn_scores = None
@@ -74,11 +77,15 @@ class GPTNeoWithSelfAblation(nn.Module):
                 block_attn_scores = overall_attention_ablation_scores[:,:,i,:]
                 block_neuron_scores = overall_neuron_ablation_scores[:,:,i,:]
 
-            x_ablated, x_clean = block(x_ablated,
-                                       x_clean,
-                                       is_preliminary_pass=is_preliminary_pass,
-                                       overall_attention_ablation_scores=block_attn_scores,
-                                       overall_neuron_ablation_scores=block_neuron_scores)
+            block_outputs = block(x_ablated,
+                                  x_clean,
+                                  is_preliminary_pass=is_preliminary_pass,
+                                  overall_attention_ablation_scores=block_attn_scores,
+                                  overall_neuron_ablation_scores=block_neuron_scores)
+            x_ablated = block_outputs["x_ablated"]
+            x_clean = block_outputs["x_clean"]
+            attn_ablations_list.append(block_outputs["attention_ablations"])
+            neuron_ablations_list.append(block_outputs["neuron_ablations"])
 
             if not is_preliminary_pass:
                 if self.config.reconstruction_loss_type == "MSE":
@@ -110,9 +117,11 @@ class GPTNeoWithSelfAblation(nn.Module):
         outputs = {
             "logits_clean": logits_clean,
             "logits_ablated": logits_ablated,
+            "attention_ablations": torch.stack(attn_ablations_list, dim=-2),
+            "neuron_ablations": torch.stack(neuron_ablations_list, dim=-2)
         }
 
-        if targets is not None:
+        if targets is not None and not is_preliminary_pass:
             loss_clean = F.cross_entropy(logits_clean.view(-1, logits_clean.size(-1)), targets.view(-1))
             if not is_preliminary_pass:
                 loss_ablated = F.cross_entropy(logits_ablated.view(-1, logits_ablated.size(-1)), targets.view(-1))
