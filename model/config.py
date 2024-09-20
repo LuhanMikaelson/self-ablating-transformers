@@ -92,7 +92,7 @@ class WandBConfig:
     in full and reproducible.
     """
     def __init__(self, model_config, training_config, dataset_name,
-                 ablation_processing, reconstruction_loss):
+                 ablation_processing, top_k_level, per_layer_ablation_position):
         # model config stuff
         self.vocab_size = model_config.vocab_size
         self.hidden_size = model_config.hidden_size
@@ -142,6 +142,17 @@ class WandBConfig:
         # add more here if you change the strategy to something other than soft-top-K
         # the first one we used could be called like "direct-with-density-loss" or something
         assert self.ablation_processing in ["soft-top-K-version-1"]
+
+        self.top_k_level = top_k_level
+        # "overall" means top-K is performed over the whole model (all layers)
+        # (as in the code before the big merge)
+        # "layer-by-layer" means top-K is performed for each layer separately
+        assert self.top_k_level in ["overall", "layer-by-layer"]
+
+        self.per_layer_ablation_position = per_layer_ablation_position
+        # "pre" means the ablation mask head takes the pre-layer value of the residual stream as input
+        # "post" means it takes the post-layer value of the residual stream as input (not implemented yet)
+        assert self.per_layer_ablation_position in ["pre", "post"]
 
     def __repr__(self):
         attributes = [f"{key}={repr(value)}" for key, value in vars(self).items()]

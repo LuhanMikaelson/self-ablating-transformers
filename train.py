@@ -16,7 +16,9 @@ def train_gptneo(model, config):
     wandb_config = WandBConfig(model.config,
                                config,
                                dataset_name="TinyStories",
-                               ablation_processing="soft-top-K-version-1")
+                               ablation_processing="soft-top-K-version-1",
+                               top_k_level="layer-by-layer",
+                               per_layer_ablation_position="pre")
 
     wandb.init(project="gpt-neo-self-ablation", config=wandb_config)
 
