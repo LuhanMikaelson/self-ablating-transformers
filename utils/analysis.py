@@ -28,6 +28,12 @@ def collect_ablations(model, train_config):
 
     return attention_ablations, neuron_ablations
 
+def dead_unit_fraction(collected_ablations, eps=1e-6):
+    """
+    Convenience function for the fraction of entries under eps
+    """
+    return (collected_ablations < eps).count_nonzero() / collected_ablations.numel()
+
 def collect_activating_texts(model, train_config, n_texts=10, n_context=10, activation_threshold=0.5):
     """
     Iterate over the training dataset and collect sequences for which each "unit"
