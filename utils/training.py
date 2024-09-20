@@ -3,16 +3,32 @@ import numpy as np
 
 class BatchGenerator:
     def __init__(self, data_file, block_size, batch_size, device):
-        self.data = np.memmap(data_file, dtype=np.uint16, mode='r')
+        self.data_file = data_file
         self.block_size = block_size
         self.batch_size = batch_size
-        self.device = device
+        self.device = torch.device(device)
+        self.device_type = 'cuda' if 'cuda' in self.device.type else 'cpu'
 
-    def get_batch(self):
-        ix = torch.randint(len(self.data) - self.block_size, (self.batch_size,))
-        x = torch.stack([torch.from_numpy((self.data[i:i+self.block_size]).astype(np.int64)) for i in ix])
-        y = torch.stack([torch.from_numpy((self.data[i+1:i+1+self.block_size]).astype(np.int64)) for i in ix])
-        return x.to(self.device), y.to(self.device)
+    def get_batch(self, shifted=True):
+        # We recreate np.memmap every batch to avoid a memory leak, as per
+        # https://stackoverflow.com/questions/45132940/numpy-memmap-memory-usage-want-to-iterate-once/61472122#61472122
+        data = np.memmap(self.data_file, dtype=np.uint16, mode='r')
+
+        # Generate random starting indices
+        ix = torch.randint(len(data) - self.block_size, (self.batch_size,))
+
+        shift = 1 if shifted else 0
+        # Create input and target tensors
+        x = torch.stack([torch.from_numpy((data[i:i+self.block_size]).astype(np.int64)) for i in ix])
+        y = torch.stack([torch.from_numpy((data[i+shift:i+shift+self.block_size]).astype(np.int64)) for i in ix])
+
+        if self.device_type == 'cuda':
+            # Pin arrays x,y, which allows us to move them to GPU asynchronously (non_blocking=True)
+            x, y = x.pin_memory().to(self.device, non_blocking=True), y.pin_memory().to(self.device, non_blocking=True)
+        else:
+            x, y = x.to(self.device), y.to(self.device)
+
+        return x, y
 
 class LossEstimator:
     def __init__(self, model, train_batch_gen, val_batch_gen, eval_iters):
