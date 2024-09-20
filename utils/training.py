@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+from tqdm.notebook import tqdm
 
 class BatchGenerator:
     def __init__(self, data_file, block_size, batch_size, device):
@@ -31,11 +32,14 @@ class BatchGenerator:
         return x, y
 
 class LossEstimator:
-    def __init__(self, model, train_batch_gen, val_batch_gen, eval_iters):
+    def __init__(self, model, train_batch_gen, val_batch_gen, eval_iters, device,
+                 activation_threshold=0.5):
         self.model = model
         self.train_batch_gen = train_batch_gen
         self.val_batch_gen = val_batch_gen
         self.eval_iters = eval_iters
+        self.device = device
+        self.activation_threshold = activation_threshold
 
     @torch.no_grad()
     def estimate_loss(self):
@@ -46,7 +50,10 @@ class LossEstimator:
             losses_clean = torch.zeros(self.eval_iters)
             losses_ablated = torch.zeros(self.eval_iters)
             reconstruction_losses = torch.zeros(self.eval_iters)
-            for k in range(self.eval_iters):
+            attention_ablation_hits = torch.zeros(self.model.config.num_layers, self.model.config.hidden_size, dtype=torch.bool, device=self.device)
+            neuron_ablation_hits = torch.zeros(self.model.config.num_layers, self.model.config.mlp_hidden_size, dtype=torch.bool, device=self.device)
+
+            for k in tqdm(range(self.eval_iters)):
                 X, Y = batch_gen.get_batch()
                 with torch.no_grad():
                     outputs = self.model(X, Y)
@@ -54,12 +61,18 @@ class LossEstimator:
                     losses_clean[k] = outputs['loss_clean'].item()
                     losses_ablated[k] = outputs['loss_ablated'].item()
                     reconstruction_losses[k] = outputs['reconstruction_loss'].item()
+                    new_attention_ablation_hits = (outputs['attention_ablations'] > self.activation_threshold).any(dim=(0,1))
+                    attention_ablation_hits = attention_ablation_hits | new_attention_ablation_hits
+                    new_neuron_ablation_hits = (outputs['neuron_ablations'] > self.activation_threshold).any(dim=(0,1))
+                    neuron_ablation_hits = neuron_ablation_hits | new_neuron_ablation_hits
 
             out[split] = {
                 'loss': losses.mean().item(),
                 'loss_clean' : losses_clean.mean().item(),
                 'loss_ablated' : losses_ablated.mean().item(),
-                'reconstruction_loss' : reconstruction_losses.mean().item()
+                'reconstruction_loss' : reconstruction_losses.mean().item(),
+                'attention_live_fraction': attention_ablation_hits.count_nonzero() / attention_ablation_hits.numel(),
+                'neuron_live_fraction': neuron_ablation_hits.count_nonzero() / neuron_ablation_hits.numel(),
             }
         self.model.train()
         return out

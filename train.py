@@ -24,7 +24,7 @@ def train_gptneo(model, config):
 
     train_batch_gen = BatchGenerator(config.train_file, config.block_size, config.batch_size, config.device)
     val_batch_gen = BatchGenerator(config.val_file, config.block_size, config.batch_size, config.device)
-    loss_estimator = LossEstimator(model, train_batch_gen, val_batch_gen, config.eval_iters)
+    loss_estimator = LossEstimator(model, train_batch_gen, val_batch_gen, config.eval_iters, config.device)
     model.to(config.device)
     optimizer = optim.AdamW(model.parameters(), lr=config.learning_rate, weight_decay=config.weight_decay)
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=config.num_batches)
