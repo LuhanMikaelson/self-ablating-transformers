@@ -1,5 +1,7 @@
 import torch
 
+from transformer_lens import HookedTransformerConfig
+
 class GPTNeoWithSelfAblationConfig:
     """
     All the hyperparameters of the model itself
@@ -7,7 +9,7 @@ class GPTNeoWithSelfAblationConfig:
     def __init__(
         self,
         vocab_size=50257,
-        hidden_size=64,
+        hidden_size=128,
         mlp_hidden_size=None,
         num_layers=8,
         num_heads=16,
@@ -44,23 +46,40 @@ class GPTNeoWithSelfAblationConfig:
         self.has_layer_by_layer_ablation_mask = has_layer_by_layer_ablation_mask
         self.has_overall_ablation_mask = has_overall_ablation_mask
         self.reconstruction_loss_type = reconstruction_loss_type
-
+        
         # Loss calculation parameters
         self.loss_coeff_base = loss_coeff_base
         self.loss_coeff_ablated = loss_coeff_ablated
         self.reconstruction_coeff = reconstruction_coeff
+        
+        # Transformer Lens specific parameters
+        self.hooked_transformer_config = HookedAblatedTransformerConfing(
+            n_layers=num_layers,
+            d_model=hidden_size,
+            n_ctx=max_position_embeddings,
+            d_head=hidden_size // num_heads,
+            act_fn="gelu",
+        )
 
     def __repr__(self):
         attributes = [f"{key}={repr(value)}" for key, value in vars(self).items()]
         return f"{self.__class__.__name__}({', '.join(attributes)})"
+    
+class HookedAblatedTransformerConfing(HookedTransformerConfig):
+    
+    def __init__(self, n_layers, d_model, n_ctx, d_head, act_fn="gelu"):
+        super().__init__(n_layers, d_model, n_ctx, d_head, act_fn=act_fn)
+        
+        # Add specific parameters here
+        
 
 class TrainingConfig:
     """
     Training hyperparameters and setup
     """
     def __init__(self, train_file = "train.bin", val_file = "validation.bin",
-                 block_size = 256, device = None, num_batches = 120000,
-                 batch_size = 64, learning_rate = 4e-3, weight_decay = 0.0,
+                 block_size = 256, device = None, num_batches = 200000,
+                 batch_size = 64, learning_rate = 1e-3, weight_decay = 0.0,
                  max_grad_norm = 1.0, save_path = "best_model.pt",
                  eval_iters = 100, log_interval = 1000,
                  lr_schedule = "CosineAnnealing"):
