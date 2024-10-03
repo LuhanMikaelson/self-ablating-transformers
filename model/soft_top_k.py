@@ -25,3 +25,11 @@ def soft_top_k(x, k, temperature=1.0, eps=None):
     weights = weights * (k / weights.sum(-1).unsqueeze(-1))
 
     return weights
+
+def hard_top_k_with_soft_gradient(x, k, temperature=1.0, eps=None):
+    hard = torch.topk(x, k)
+    soft = soft_top_k(x, k, temperature=temperature, eps=eps)
+
+    # this returns the exact hard topk values but propagates gradients
+    # as if it were soft_top_k; see https://shorturl.at/NPkTs
+    return hard - soft.detach() + soft
