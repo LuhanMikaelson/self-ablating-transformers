@@ -137,6 +137,7 @@ class WandBConfig:
                   else ("overall" if model_config.has_overall_ablation_mask
                         else None)))
         self.reconstuction_loss = model_config.reconstruction_loss_type
+        self.ablation_processing = model_config.ablation_processing
 
         # training config stuff
         self.train_file = training_config.train_file
