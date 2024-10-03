@@ -113,7 +113,7 @@ class WandBConfig:
     in full and reproducible.
     """
     def __init__(self, model_config, training_config, dataset_name,
-                 ablation_processing, top_k_level, per_layer_ablation_position):
+                 top_k_level, per_layer_ablation_position):
         # model config stuff
         self.vocab_size = model_config.vocab_size
         self.hidden_size = model_config.hidden_size
