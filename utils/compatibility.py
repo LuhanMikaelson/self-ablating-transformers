@@ -79,7 +79,7 @@ def convert_model_to_hooked_transformer(model):
     See center_unembed in HookedTransformer.py upstream.
     """
     ht = get_hooked_transformer_with_config(model.config)
-    ht.load_and_process_state_dict(our_state_dict_to_hooked_transformer(model.state_dict(), ht.cfg))
+    ht.load_and_process_state_dict(our_state_dict_to_hooked_transformer(model.state_dict(), ht.cfg), fold_ln=False)
     return ht
 
 def ablation_hook(
