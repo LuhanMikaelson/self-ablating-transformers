@@ -1,0 +1,14 @@
+# Virtual Environment
+venv/
+env/
+ENV/
+.env
+.venv
+__pycache__/* 
+debug_neuron_graphs/*
+model/__pycache__/*
+share/*
+share/
+share/**share/
+share/*
+**/share/
